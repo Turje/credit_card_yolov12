@@ -104,13 +104,23 @@ def generate_progressive_tests(
                         break
             
             if not found_test:
+                # Check if split directory exists but is empty
+                split_dir = test_path.parent
+                if split_dir.exists() and split_dir.name.endswith("_split"):
+                    print(f"\n⚠️ Found split directory but test subdirectory is missing: {split_dir}")
+                    print(f"   This suggests dataset splitting may have failed or is incomplete.")
+                    print(f"   Please check if split_dataset.py completed successfully.")
+                
                 raise FileNotFoundError(
-                    f"Test dataset not found. Searched:\n"
+                    f"\n❌ Test dataset not found!\n\n"
+                    f"Searched locations:\n"
                     f"  - {test_path}\n"
                     f"  - {test_path.parent}\n"
-                    f"  - {test_path.parent.parent}\n"
-                    f"\nPlease run dataset splitting first:\n"
-                    f"  python src/split_dataset.py --dataset <dataset_path> --seed 42"
+                    f"  - {test_path.parent.parent}\n\n"
+                    f"📋 Solution: Run dataset splitting first:\n"
+                    f"   python src/split_dataset.py --dataset {test_path.parent.parent / test_path.parent.name.replace('_split', '')} --seed 42\n\n"
+                    f"   Or if your dataset is at a different location, use:\n"
+                    f"   python src/split_dataset.py --dataset <path_to_original_dataset> --seed 42"
                 )
     
     if output_base is None:
