@@ -76,13 +76,42 @@ def generate_progressive_tests(
             test_path = found_test.parent if found_test.name == "train" else found_test
             print(f"✅ Using test path: {test_path}")
         else:
-            raise FileNotFoundError(
-                f"Test dataset not found. Searched:\n"
-                f"  - {test_path}\n"
-                f"  - {test_path.parent}\n"
-                f"  - {test_path.parent.parent}\n"
-                f"\nPlease check the test dataset path or run dataset splitting first."
-            )
+            # Last resort: check if original dataset has a test set, or use train set temporarily
+            print("⚠️ Test dataset not found in split directories.")
+            print("Checking original dataset structure...")
+            
+            # Look for original dataset
+            original_dataset = test_path.parent.parent
+            possible_test_locations = [
+                original_dataset / "test",
+                original_dataset / "test" / "train",
+                original_dataset / "val",  # Use val as fallback
+                original_dataset / "val" / "train",
+                original_dataset / "train",  # Use train as last resort
+            ]
+            
+            for loc in possible_test_locations:
+                if loc.exists():
+                    ann_file = loc / "_annotations.coco.json"
+                    if not ann_file.exists() and loc.parent.exists():
+                        ann_file = loc.parent / "_annotations.coco.json"
+                    
+                    if ann_file.exists():
+                        found_test = loc
+                        test_path = loc.parent if loc.name == "train" else loc
+                        print(f"✅ Found alternative dataset at: {test_path}")
+                        print(f"⚠️ Note: Using {loc.name} set. Consider running split_dataset.py first.")
+                        break
+            
+            if not found_test:
+                raise FileNotFoundError(
+                    f"Test dataset not found. Searched:\n"
+                    f"  - {test_path}\n"
+                    f"  - {test_path.parent}\n"
+                    f"  - {test_path.parent.parent}\n"
+                    f"\nPlease run dataset splitting first:\n"
+                    f"  python src/split_dataset.py --dataset <dataset_path> --seed 42"
+                )
     
     if output_base is None:
         output_base = test_path.parent
