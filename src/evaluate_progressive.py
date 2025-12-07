@@ -23,13 +23,17 @@ def evaluate_model_on_test_set(model_path: str, test_dataset_path: str):
     Returns:
         Dictionary with metrics
     """
+    import shutil
+    
     model = YOLO(model_path)
     test_path = Path(test_dataset_path)
     
     # Find annotation file (could be in test_path/train/ or test_path/)
     ann_file = test_path / "train" / "_annotations.coco.json"
+    train_dir = test_path / "train"
     if not ann_file.exists():
         ann_file = test_path / "_annotations.coco.json"
+        train_dir = test_path
     
     if not ann_file.exists():
         raise FileNotFoundError(
@@ -38,20 +42,54 @@ def evaluate_model_on_test_set(model_path: str, test_dataset_path: str):
             f"  - {test_path / '_annotations.coco.json'}"
         )
     
-    # Load COCO annotations to get class names
+    # Load COCO annotations
     with open(ann_file, 'r') as f:
         coco_data = json.load(f)
     
     categories = coco_data.get('categories', [])
     class_names = [cat['name'] for cat in sorted(categories, key=lambda x: x['id'])]
+    images = {img['id']: img for img in coco_data['images']}
     
-    # Create temporary YOLO dataset config
-    # Find images directory
-    images_dir = test_path / "train"
-    if not images_dir.exists():
-        images_dir = test_path
+    # Convert COCO to YOLO format (create labels directory if needed)
+    yolo_labels = train_dir / "labels"
+    yolo_labels.mkdir(parents=True, exist_ok=True)
     
-    # Create YOLO config
+    # Check if labels already exist
+    existing_labels = list(yolo_labels.glob("*.txt"))
+    if len(existing_labels) == 0:
+        print(f"  Converting COCO to YOLO format...")
+        # Create YOLO label files
+        for img_id, img_info in images.items():
+            img_filename = img_info['file_name']
+            img_anns = [ann for ann in coco_data['annotations'] if ann['image_id'] == img_id]
+            
+            # Create YOLO label file
+            label_file = yolo_labels / (Path(img_filename).stem + '.txt')
+            img_w = img_info['width']
+            img_h = img_info['height']
+            
+            with open(label_file, 'w') as f:
+                for ann in img_anns:
+                    bbox = ann['bbox']  # [x, y, width, height]
+                    x, y, w, h = bbox
+                    
+                    # Convert to YOLO format (normalized center x, center y, width, height)
+                    center_x = (x + w / 2) / img_w
+                    center_y = (y + h / 2) / img_h
+                    norm_w = w / img_w
+                    norm_h = h / img_h
+                    
+                    # Get category ID (map to 0-indexed)
+                    cat_id = ann['category_id']
+                    cat_map = {cat['id']: i for i, cat in enumerate(sorted(categories, key=lambda x: x['id']))}
+                    yolo_cat_id = cat_map.get(cat_id, 0)
+                    
+                    f.write(f"{yolo_cat_id} {center_x:.6f} {center_y:.6f} {norm_w:.6f} {norm_h:.6f}\n")
+        print(f"  ✅ Created {len(images)} label files")
+    else:
+        print(f"  ✅ YOLO labels already exist ({len(existing_labels)} files)")
+    
+    # Create YOLO dataset config
     yolo_config = {
         'path': str(test_path.absolute()),
         'train': 'train',  # Relative to path
