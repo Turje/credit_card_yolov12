@@ -1,0 +1,107 @@
+# Cursor Rules for Credit Card YOLOv12 Project
+
+## File Creation Policy
+- **CRITICAL: Do NOT create files unless explicitly requested by the user**
+- **NEVER create markdown files (.md), README files, or documentation files unless explicitly asked**
+- Only create code files when the user explicitly requests them
+- When editing, prefer modifying existing files over creating new ones
+- If unsure whether to create a file, ask the user first
+
+## Problem-Solving Approach
+- **Be honest and transparent** - Admit uncertainty rather than guessing
+- **Investigate before assuming** - When questions are not immediately obvious, create a plan to discover the truth
+- **Ask clarifying questions** - Seek clarification rather than making assumptions
+- **Show reasoning** - Explain how conclusions were reached and what evidence supports them
+- **Create investigation plans** - Break down unclear problems into steps to systematically find answers
+
+## Python Coding Style
+
+### General
+- Use Python 3.8+ features
+- Follow PEP 8 style guidelines
+- Use type hints for function parameters and return types
+- Prefer `pathlib.Path` over `os.path` for file operations
+- Use descriptive variable and function names
+
+### Documentation
+- Include docstrings for all classes and public functions using triple quotes (""")
+- Docstrings should follow the format:
+  ```python
+  """
+  Brief description.
+  
+  Args:
+      param: Description
+  """
+  ```
+- Include type information in docstrings when helpful
+
+### Code Organization
+- Use classes for related functionality
+- Keep functions focused and single-purpose
+- Use argparse for CLI interfaces
+- Include proper error handling with try/except blocks
+- Print informative error messages with context
+
+### Imports
+- Group imports: standard library, third-party, local
+- Use absolute imports when possible
+- Keep imports at the top of the file
+
+### Error Handling
+- Use try/except blocks for error handling
+- Print clear error messages
+- Include traceback when debugging
+- Return appropriate exit codes (0 for success, 1 for failure)
+
+### Path Handling
+- Always use `pathlib.Path` for file paths
+- Use `.exists()` to check file existence
+- Use `.mkdir(parents=True, exist_ok=True)` for directory creation
+- Prefer absolute paths when working with tool calls
+
+### Code Examples
+- When creating example code, include comments explaining usage
+- Include error checking and validation
+- Make examples runnable and self-contained
+
+## Project-Specific Conventions
+
+### Dataset Handling
+- Support both COCO and YOLO formats
+- Handle dataset splits (train/val/test)
+- Check for annotation files before processing
+- Provide clear error messages when files are missing
+
+### Model Training
+- Support YOLOv8 model sizes (n, s, m, l, x)
+- Use configurable parameters (epochs, batch size, image size)
+- Save models to specified output directories
+- Print training progress and results
+
+### Visualization
+- Use matplotlib for plotting
+- Save visualizations to appropriate output directories
+- Include clear labels and titles in plots
+- Use appropriate color schemes
+
+## General Best Practices
+
+### Code Changes
+- Read existing files before making changes
+- Preserve existing code style and patterns
+- Make minimal changes to achieve the goal
+- Test changes when possible
+
+### Communication
+- Be concise and direct
+- Explain what you're doing when making significant changes
+- Ask for clarification if requirements are unclear
+- Don't make assumptions about user intent
+
+### Tool Usage
+- Prefer reading files before editing
+- Use appropriate tools for the task
+- Batch related operations when possible
+- Check for linter errors after making changes
+
