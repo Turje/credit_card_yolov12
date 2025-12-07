@@ -50,17 +50,31 @@ def evaluate_model_on_test_set(model_path: str, test_dataset_path: str):
     class_names = [cat['name'] for cat in sorted(categories, key=lambda x: x['id'])]
     images = {img['id']: img for img in coco_data['images']}
     
-    # Convert COCO to YOLO format (create labels directory if needed)
+    # YOLO expects images in train/images/ and labels in train/labels/
+    yolo_images_dir = train_dir / "images"
     yolo_labels = train_dir / "labels"
+    yolo_images_dir.mkdir(parents=True, exist_ok=True)
     yolo_labels.mkdir(parents=True, exist_ok=True)
     
-    # Check if labels already exist
+    # Check if conversion already done
     existing_labels = list(yolo_labels.glob("*.txt"))
-    if len(existing_labels) == 0:
+    existing_images = list(yolo_images_dir.glob("*.jpg")) + list(yolo_images_dir.glob("*.png"))
+    
+    if len(existing_labels) == 0 or len(existing_images) == 0:
         print(f"  Converting COCO to YOLO format...")
-        # Create YOLO label files
+        
+        # Copy images and create label files
         for img_id, img_info in images.items():
             img_filename = img_info['file_name']
+            img_path = train_dir / img_filename
+            
+            # Copy image to images directory if not already there
+            if img_path.exists():
+                dest_img = yolo_images_dir / img_filename
+                if not dest_img.exists():
+                    shutil.copy2(img_path, dest_img)
+            
+            # Get annotations for this image
             img_anns = [ann for ann in coco_data['annotations'] if ann['image_id'] == img_id]
             
             # Create YOLO label file
@@ -85,9 +99,9 @@ def evaluate_model_on_test_set(model_path: str, test_dataset_path: str):
                     yolo_cat_id = cat_map.get(cat_id, 0)
                     
                     f.write(f"{yolo_cat_id} {center_x:.6f} {center_y:.6f} {norm_w:.6f} {norm_h:.6f}\n")
-        print(f"  ✅ Created {len(images)} label files")
+        print(f"  ✅ Created {len(images)} label files and copied images")
     else:
-        print(f"  ✅ YOLO labels already exist ({len(existing_labels)} files)")
+        print(f"  ✅ YOLO format already exists ({len(existing_labels)} labels, {len(existing_images)} images)")
     
     # Create YOLO dataset config
     yolo_config = {
