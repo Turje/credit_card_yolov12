@@ -148,7 +148,7 @@ class UltralyticsInferenceEnhanced:
 
         # Setup video writer
         if save_video:
-            fourcc = cv2.VideoWriter.fourcc(*"mp4v")
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
             out = cv2.VideoWriter(
                 str(output_path_obj), fourcc, fps // frame_skip, (width, height)
             )
