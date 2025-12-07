@@ -17,7 +17,8 @@ def generate_progressive_tests(
     test_dataset_path: str,
     output_base: str = None,
     occlusion_type: str = "patch",
-    seed: int = 42
+    seed: int = 42,
+    occlusion_levels: list = None
 ):
     """
     Generate progressive occlusion test sets.
@@ -201,7 +202,11 @@ def generate_progressive_tests(
     print(f"✅ Baseline test set created: {test_0_path}")
     
     # Generate occluded test sets
-    occlusion_levels = [0.25, 0.50, 0.75]
+    if occlusion_levels is None:
+        occlusion_levels = [0.25, 0.50, 0.75]  # Default levels
+    else:
+        # Ensure levels are floats between 0 and 1
+        occlusion_levels = [float(level) if level <= 1.0 else float(level) / 100.0 for level in occlusion_levels]
     
     for occlusion_ratio in occlusion_levels:
         print(f"\nGenerating test set with {occlusion_ratio*100:.0f}% occlusion...")
@@ -293,15 +298,28 @@ def main():
         default=42,
         help="Random seed (default: 42)"
     )
+    parser.add_argument(
+        "--levels",
+        type=float,
+        nargs="+",
+        default=None,
+        help="Occlusion levels as percentages (e.g., --levels 25 75 100 for 25%, 75%, 100%). Default: 25 50 75"
+    )
     
     args = parser.parse_args()
+    
+    # Convert levels to ratios if provided
+    occlusion_levels = None
+    if args.levels:
+        occlusion_levels = [level / 100.0 if level > 1.0 else level for level in args.levels]
     
     try:
         generate_progressive_tests(
             test_dataset_path=args.test_dataset,
             output_base=args.output,
             occlusion_type=args.type,
-            seed=args.seed
+            seed=args.seed,
+            occlusion_levels=occlusion_levels
         )
     except Exception as e:
         print(f"Error: {e}")

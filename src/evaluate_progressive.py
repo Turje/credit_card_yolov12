@@ -205,8 +205,25 @@ def evaluate_progressive(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # Find all test sets
-    occlusion_levels = [0, 25, 50, 75]
+    # Find all test sets - detect available occlusion levels
+    # Look for test_occlusion_* directories
+    available_levels = []
+    for item in test_base.iterdir():
+        if item.is_dir() and item.name.startswith("test_occlusion_"):
+            try:
+                level = int(item.name.replace("test_occlusion_", ""))
+                available_levels.append(level)
+            except ValueError:
+                continue
+    
+    if not available_levels:
+        # Fallback to default levels
+        print("⚠️ No occlusion test sets found, using default levels: 0, 25, 50, 75")
+        occlusion_levels = [0, 25, 50, 75]
+    else:
+        occlusion_levels = sorted(available_levels)
+        print(f"✅ Found occlusion test sets: {occlusion_levels}")
+    
     results = {}
     
     print("Evaluating model on progressive occlusion test sets...\n")
