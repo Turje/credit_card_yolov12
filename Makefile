@@ -144,3 +144,50 @@ phase1-all: split-dataset prepare-progressive-tests ## Run Phase 1 workflow: spl
 	@echo "  1. Train model: make train-model DATASET=datasets/credit-cards-coco_split/train"
 	@echo "  2. Evaluate: make evaluate-progressive MODEL=models/.../best.pt TEST_SETS=datasets/credit-cards-coco_split"
 
+# Unified Training and Inference (New)
+train-unified: ## Train model using unified config (make train-unified DATASET=datasets/my_dataset MODEL_NAME=yolov8n EPOCHS=100)
+	@if [ -z "$(DATASET)" ]; then \
+		echo "Error: DATASET must be set"; \
+		echo "Example: make train-unified DATASET=datasets/my_dataset MODEL_NAME=yolov8n EPOCHS=100"; \
+		exit 1; \
+	fi
+	python3 src/train_unified.py \
+		--dataset-path $(DATASET) \
+		--framework $(or $(FRAMEWORK),ultralytics) \
+		--model-name $(or $(MODEL_NAME),yolov8n) \
+		--epochs $(or $(EPOCHS),100) \
+		--batch-size $(or $(BATCH_SIZE),16) \
+		--img-size $(or $(IMG_SIZE),640) \
+		--output-dir $(or $(OUTPUT_DIR),models) \
+		--device $(or $(DEVICE),cuda) \
+		$(if $(CONFIG),--config $(CONFIG))
+
+inference-video: ## Run video inference (make inference-video MODEL=models/.../best.pt VIDEO=input.mp4 OUTPUT=output.mp4)
+	@if [ -z "$(MODEL)" ] || [ -z "$(VIDEO)" ]; then \
+		echo "Error: MODEL and VIDEO must be set"; \
+		echo "Example: make inference-video MODEL=models/model_n/weights/best.pt VIDEO=input.mp4 OUTPUT=output.mp4"; \
+		exit 1; \
+	fi
+	python3 src/inference.py \
+		--model $(MODEL) \
+		--video $(VIDEO) \
+		--output $(or $(OUTPUT),outputs/$(shell basename $(VIDEO) .mp4)_detected.mp4) \
+		--conf-threshold $(or $(CONF_THRESHOLD),0.25) \
+		--device $(or $(DEVICE),cuda) \
+		$(if $(CONFIG),--config $(CONFIG)) \
+		$(if $(SHOW),--show)
+
+inference-image: ## Run image inference (make inference-image MODEL=models/.../best.pt IMAGE=input.jpg OUTPUT=output.jpg)
+	@if [ -z "$(MODEL)" ] || [ -z "$(IMAGE)" ]; then \
+		echo "Error: MODEL and IMAGE must be set"; \
+		echo "Example: make inference-image MODEL=models/model_n/weights/best.pt IMAGE=input.jpg OUTPUT=output.jpg"; \
+		exit 1; \
+	fi
+	python3 src/inference.py \
+		--model $(MODEL) \
+		--image $(IMAGE) \
+		--output $(or $(OUTPUT),outputs/$(shell basename $(IMAGE))) \
+		--conf-threshold $(or $(CONF_THRESHOLD),0.25) \
+		--device $(or $(DEVICE),cuda) \
+		$(if $(CONFIG),--config $(CONFIG))
+
